@@ -64,7 +64,8 @@ class LINEBotTiny
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             error_log("Method not allowed");
-            exit();
+            return "Method not allowed";
+            // exit();
         }
 
         $entityBody = file_get_contents('php://input');
@@ -72,22 +73,25 @@ class LINEBotTiny
         if (strlen($entityBody) === 0) {
             http_response_code(400);
             error_log("Missing request body");
-            exit();
+            return "Missing request body";
+            // exit();
         }
 
         if (!hash_equals($this->sign($entityBody), $_SERVER['HTTP_X_LINE_SIGNATURE'])) {
             http_response_code(400);
             error_log("Invalid signature value");
-            exit();
+              return "Invalid signature value";
+            // exit();
         }
 
         $data = json_decode($entityBody, true);
         if (!isset($data['events'])) {
             http_response_code(400);
             error_log("Invalid request body: missing events property");
-            exit();
+             return "Invalid request body: missing events property";
+            // exit();
         }
-        return $data['events'];
+        return "data : ".$data['events'];
     }
 
     public function replyMessage($message)
@@ -112,10 +116,79 @@ class LINEBotTiny
         }
     }
 
-    private function sign($body)
+    public function sign($body)
     {
         $hash = hash_hmac('sha256', $body, $this->channelSecret, true);
         $signature = base64_encode($hash);
         return $signature;
     }
+
+     public function profil($userId)
+    {
+      
+        return json_decode(exec_get('https://api.line.me/v2/bot/profile/'.$userId,$this->channelAccessToken));
+       
+    }
 }
+
+function exec_get($fullurl,$channelAccessToken)
+{
+        
+        $header = array(
+            "Content-Type: application/json",
+            'Authorization: Bearer '.$channelAccessToken,
+        );
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_VERBOSE, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);        
+        curl_setopt($ch, CURLOPT_FAILONERROR, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+        curl_setopt($ch, CURLOPT_URL, $fullurl);
+        
+        $returned =  curl_exec($ch);
+    
+        return($returned);
+}
+function exec_url($fullurl,$channelAccessToken,$message)
+{
+        
+        $header = array(
+            "Content-Type: application/json",
+            'Authorization: Bearer '.$channelAccessToken,
+        );
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_VERBOSE, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_POST,           1 );
+        curl_setopt($ch, CURLOPT_POSTFIELDS,     $message); 
+        curl_setopt($ch, CURLOPT_FAILONERROR, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+        curl_setopt($ch, CURLOPT_URL, $fullurl);
+        
+        $returned =  curl_exec($ch);
+    
+        return($returned);
+}
+function exec_url_aja($fullurl)
+    {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_HEADER, 0);
+            curl_setopt($ch, CURLOPT_VERBOSE, 1);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_FAILONERROR, 0);
+            curl_setopt($ch, CURLOPT_URL, $fullurl);
+            
+            $returned =  curl_exec($ch);
+        
+            return($returned);
+    }
